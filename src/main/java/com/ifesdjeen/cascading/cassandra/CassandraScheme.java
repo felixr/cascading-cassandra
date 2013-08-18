@@ -18,7 +18,7 @@ import cascading.tap.Tap;
 
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
-import org.apache.commons.lang.StringUtils;
+
 import org.apache.hadoop.mapred.*;
 
 import org.apache.cassandra.hadoop.ConfigHelper;
@@ -65,8 +65,6 @@ public class CassandraScheme extends BaseCassandraScheme {
 
     conf.setInputFormat(ColumnFamilyInputFormat.class);
 
-    ConfigHelper.setRangeBatchSize(conf, 1000);
-
     if (this.settings.containsKey("source.predicate")) {
       ConfigHelper.setInputSlicePredicate(conf, (SlicePredicate) this.settings.get("source.predicate"));
     } else {
@@ -75,7 +73,13 @@ public class CassandraScheme extends BaseCassandraScheme {
       List<String> sourceColumns = this.getSourceColumns();
 
       if (!sourceColumns.isEmpty()) {
-        logger.debug("Using with following columns: {}", StringUtils.join(sourceColumns, ","));
+         if (logger.isDebugEnabled()) {
+             String allSourceColumns = "";
+             for (String column: sourceColumns) {
+                 allSourceColumns += column + ", ";
+             }
+             logger.debug("Using with following columns: {}", allSourceColumns);
+          }
 
         List<ByteBuffer> columnNames = new ArrayList<ByteBuffer>();
         for (String columnFieldName : sourceColumns) {
