@@ -3,24 +3,30 @@ package com.ifesdjeen.cascading.cassandra;
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
 import cascading.scheme.SourceCall;
-
 import cascading.tap.Tap;
-
-import org.apache.hadoop.mapred.*;
-import org.apache.hadoop.fs.Path;
-
 import org.apache.cassandra.hadoop.ConfigHelper;
-
-import java.util.*;
-
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public abstract class BaseCassandraScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
 
-  protected static final Logger logger = LoggerFactory.getLogger(CassandraScheme.class);
+    protected static final Logger logger = LoggerFactory.getLogger(CassandraScheme.class);
+    public static final String DB_PORT = "db.port";
+    public static final String DB_HOST = "db.host";
+    public static final String DB_KEYSPACE = "db.keyspace";
+    public static final String DB_COLUMN_FAMILY = "db.columnFamily";
+    public static final String SOURCE_RANGE_BATCH_SIZE = "source.rangeBatchSize";
+    public static final String SOURCE_INPUT_SPLIT_SIZE = "source.inputSplitSize";
+    public static final String CASSANDRA_INPUT_PARTITIONER = "cassandra.inputPartitioner";
+    public static final String CASSANDRA_OUTPUT_PARTITIONER = "cassandra.outputPartitioner";
 
-  protected String pathUUID;
+    protected String pathUUID;
   protected Map<String, Object> settings;
 
   protected String host;
@@ -28,25 +34,24 @@ public abstract class BaseCassandraScheme extends Scheme<JobConf, RecordReader, 
   protected String columnFamily;
   protected String keyspace;
 
-  public BaseCassandraScheme(Map<String, Object> settings) {
-    this.settings = settings;
-    this.pathUUID = UUID.randomUUID().toString();
+    public BaseCassandraScheme(Map<String, Object> settings) {
+        this.pathUUID = UUID.randomUUID().toString();
 
-    if (this.settings.containsKey("db.port")) {
-      this.port = (String) this.settings.get("db.port");
-    } else {
-      this.port = "9160";
-    }
+        // default settings
+        this.settings = new HashMap<String, Object>();
+        this.settings.put(DB_PORT, "9160");
+        this.settings.put(DB_HOST, "localhost");
+        this.settings.put(SOURCE_INPUT_SPLIT_SIZE, 50);
+        this.settings.put(SOURCE_RANGE_BATCH_SIZE, 1000);
+        this.settings.put(CASSANDRA_INPUT_PARTITIONER, "org.apache.cassandra.dht.Murmur3Partitioner");
+        this.settings.put(CASSANDRA_OUTPUT_PARTITIONER, "org.apache.cassandra.dht.Murmur3Partitioner");
+        this.settings.putAll(settings);
 
-    if (this.settings.containsKey("db.host")) {
-      this.host = (String) this.settings.get("db.host");
-    } else {
-      this.host = "localhost";
-    }
-
-    this.keyspace = (String) this.settings.get("db.keyspace");
-    this.columnFamily = (String) this.settings.get("db.columnFamily");
-  }
+        this.port = (String) this.settings.get(DB_PORT);
+        this.host = (String) this.settings.get(DB_HOST);
+        this.keyspace = (String) this.settings.get(DB_KEYSPACE);
+        this.columnFamily = (String) this.settings.get(DB_COLUMN_FAMILY);
+}
 
   /**
    *
@@ -62,23 +67,9 @@ public abstract class BaseCassandraScheme extends Scheme<JobConf, RecordReader, 
     ConfigHelper.setInputRpcPort(conf, port);
     ConfigHelper.setInputInitialAddress(conf, this.host);
 
-    if (this.settings.containsKey("source.rangeBatchSize")) {
-      ConfigHelper.setRangeBatchSize(conf, (Integer) this.settings.get("source.rangeBatchSize"));
-    } else {
-      ConfigHelper.setRangeBatchSize(conf, 1000);
-    }
-
-    if (this.settings.containsKey("source.inputSplitSize")) {
-      ConfigHelper.setRangeBatchSize(conf, (Integer) this.settings.get("source.inputSplitSize"));
-    } else {
-      ConfigHelper.setInputSplitSize(conf, 50);
-    }
-
-    if (this.settings.containsKey("cassandra.inputPartitioner")) {
-      ConfigHelper.setInputPartitioner(conf, (String) this.settings.get("cassandra.inputPartitioner"));
-    } else {
-      ConfigHelper.setInputPartitioner(conf, "org.apache.cassandra.dht.Murmur3Partitioner");
-    }
+    ConfigHelper.setRangeBatchSize(conf, (Integer) this.settings.get(SOURCE_RANGE_BATCH_SIZE));
+    ConfigHelper.setInputSplitSize(conf, (Integer) this.settings.get(SOURCE_INPUT_SPLIT_SIZE));
+    ConfigHelper.setInputPartitioner(conf, (String) this.settings.get(CASSANDRA_INPUT_PARTITIONER));
 
     FileInputFormat.addInputPaths(conf, getPath().toString());
   }
@@ -110,17 +101,13 @@ public abstract class BaseCassandraScheme extends Scheme<JobConf, RecordReader, 
   public void sinkConfInit(FlowProcess<JobConf> process,
                            Tap<JobConf, RecordReader, OutputCollector> tap,
                            JobConf conf) {
-    ConfigHelper.setRangeBatchSize(conf, 1000);
-
     ConfigHelper.setOutputRpcPort(conf, port);
     ConfigHelper.setOutputInitialAddress(conf, host);
 
-    if (this.settings.containsKey("cassandra.outputPartitioner")) {
-      ConfigHelper.setOutputPartitioner(conf, (String) this.settings.get("cassandra.outputPartitioner"));
-    } else {
-      ConfigHelper.setOutputPartitioner(conf, "org.apache.cassandra.dht.Murmur3Partitioner");
-    }
+    ConfigHelper.setRangeBatchSize(conf, (Integer) this.settings.get(SOURCE_RANGE_BATCH_SIZE));
+    ConfigHelper.setInputSplitSize(conf, (Integer) this.settings.get(SOURCE_INPUT_SPLIT_SIZE));
 
+    ConfigHelper.setOutputPartitioner(conf, (String) this.settings.get(CASSANDRA_OUTPUT_PARTITIONER));
     ConfigHelper.setOutputColumnFamily(conf, keyspace, columnFamily);
 
     FileOutputFormat.setOutputPath(conf, getPath());
