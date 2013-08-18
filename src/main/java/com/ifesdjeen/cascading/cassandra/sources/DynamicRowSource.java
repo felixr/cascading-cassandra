@@ -23,11 +23,8 @@ public class DynamicRowSource extends BaseThriftSource implements ISource {
   protected static final Logger logger = LoggerFactory.getLogger(DynamicRowSource.class);
 
   public Tuple source(Map<String, Object> settings,
-                      Object boxedKey,
-                      Object boxedColumns) throws IOException {
-    SortedMap<ByteBuffer, IColumn> columns = (SortedMap<ByteBuffer, IColumn>) boxedColumns;
-    ByteBuffer key = (ByteBuffer) boxedKey;
-
+                      ByteBuffer key,
+                      SortedMap<ByteBuffer, IColumn> columns) throws IOException {
     Tuple result = new Tuple();
     result.add(ByteBufferUtil.string(key));
 
