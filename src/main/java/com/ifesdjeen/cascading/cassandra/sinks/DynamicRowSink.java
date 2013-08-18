@@ -58,7 +58,7 @@ public class DynamicRowSink implements ISink {
       }
     }
 
-    String columnValueField = (String) dynamicMappings.get("columnValue");
+    String columnValueField = dynamicMappings.get("columnValue");
     Object tupleEntryColumnValueValue = null;
     if (columnValueField != null) {
       try {
@@ -73,7 +73,7 @@ public class DynamicRowSink implements ISink {
     List<Mutation> mutations = new ArrayList<Mutation>();
     if (tupleEntryColumnNameValues.size() > 0) {
 
-      ByteBuffer columnName = null;
+      ByteBuffer columnName;
       if (columnNameType instanceof CompositeType) {
         logger.info("CompositeType");
         columnName = SerializerHelper.serializeComposite(tupleEntryColumnNameValues, (CompositeType) columnNameType);

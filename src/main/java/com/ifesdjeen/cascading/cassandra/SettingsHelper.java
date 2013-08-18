@@ -21,8 +21,7 @@ public class SettingsHelper {
   public static List<String> getSourceMappings(Map<String, Object> settings) {
     Object obj = settings.get("mappings.source");
     if (obj instanceof String) {
-      List<String> singleMapping = Arrays.asList((String) obj);
-      return singleMapping;
+      return Arrays.asList((String) obj);
     } else if (obj instanceof List) {
       return (List<String>) obj;
     } else {

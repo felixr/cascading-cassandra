@@ -22,7 +22,7 @@ public class SerializerHelper {
     return deserialize(bb, inferType(type));
   }
 
-  public static Object deserialize(ByteBuffer bb, AbstractType t) throws SyntaxException, ConfigurationException {
+  public static Object deserialize(ByteBuffer bb, AbstractType t) {
 
     if (t instanceof CompositeType) {
       CompositeType ct = (CompositeType) t;
@@ -98,8 +98,7 @@ public class SerializerHelper {
       ByteBuffer cbb = SerializerHelper.serialize(component);
       builder.add(cbb);
     }
-    ByteBuffer r = builder.build();
-    return r;
+    return builder.build();
   }
 
   public static ByteBuffer nullToByteBuffer() {

@@ -85,9 +85,7 @@ public class CassandraTap extends Tap<JobConf, RecordReader, OutputCollector> {
       return false;
 
     CassandraTap otherTap = (CassandraTap) other;
-    if (!otherTap.getIdentifier().equals(getIdentifier())) return false;
-
-    return true;
+    return otherTap.getIdentifier().equals(getIdentifier());
   }
 
   @Override

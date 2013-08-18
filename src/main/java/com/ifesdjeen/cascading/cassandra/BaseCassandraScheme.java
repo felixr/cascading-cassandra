@@ -16,7 +16,7 @@ import java.util.UUID;
 
 public abstract class BaseCassandraScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
 
-    protected static final Logger logger = LoggerFactory.getLogger(CassandraScheme.class);
+    static final Logger logger = LoggerFactory.getLogger(CassandraScheme.class);
     public static final String DB_PORT = "db.port";
     public static final String DB_HOST = "db.host";
     public static final String DB_KEYSPACE = "db.keyspace";
@@ -138,10 +138,8 @@ public abstract class BaseCassandraScheme extends Scheme<JobConf, RecordReader, 
 
     CassandraScheme that = (CassandraScheme) other;
 
-    if (!getPath().toString().equals(that.getPath().toString()))
-      return false;
+    return getPath().toString().equals(that.getPath().toString());
 
-    return true;
   }
 
   @Override

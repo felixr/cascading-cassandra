@@ -30,7 +30,7 @@ public class CassandraCollector extends TupleEntrySchemeCollector implements Out
    * @param tap         of type Tap
    * @throws IOException when fails to initialize
    */
-  public CassandraCollector(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap) throws IOException {
+  public CassandraCollector(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap) {
     super(flowProcess, tap.getScheme());
     this.hadoopFlowProcess = flowProcess;
 
