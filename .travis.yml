@@ -1,10 +1,7 @@
-lein: lein2
-language: clojure
-install: lein2 deps
-script: lein2 javac && lein2 test
+language: java
 notifications:
   recipients:
-    - oleksandr.petrov@gmail.com
+    - felix.riedel@gmail.com
 jdk:
   - openjdk6
   - openjdk7
