@@ -4,7 +4,9 @@ import java.util.*;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 
+import cascading.scheme.SourceCall;
 import com.ifesdjeen.cascading.cassandra.SettingsHelper;
+import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,24 +24,29 @@ import com.ifesdjeen.cascading.cassandra.hadoop.SerializerHelper;
  */
 public class StaticRowSource extends BaseThriftSource implements ISource {
 
+  Map<String, String> dataTypes;
+  protected List<String> sourceMappings;
+
   private static final Logger logger = LoggerFactory.getLogger(StaticRowSource.class);
 
-    public Tuple source(Map<String, Object> settings,
-                        ByteBuffer key,
-                        SortedMap<ByteBuffer, IColumn> columns) throws IOException {
+  @Override
+  public void sourcePrepare(Map<String, Object> settings, SourceCall<Object[], RecordReader> sourceCall) {
+    super.sourcePrepare(settings,sourceCall);
+    dataTypes = SettingsHelper.getTypes(settings);
+    sourceMappings = SettingsHelper.getSourceMappings(settings);
+  }
 
+  @Override
+  protected Tuple source(ByteBuffer key, SortedMap<ByteBuffer, IColumn> columns) throws IOException {
     Tuple result = new Tuple();
     result.add(ByteBufferUtil.string(key));
-
-    Map<String, String> dataTypes = SettingsHelper.getTypes(settings);
-    List<String> sourceMappings = SettingsHelper.getSourceMappings(settings);
 
     Map<String, IColumn> columnsByStringName = new HashMap<String, IColumn>();
     for (ByteBuffer columnName : columns.keySet()) {
       String stringName = ByteBufferUtil.string(columnName);
-      logger.info("column name: {}", stringName);
+      logger.debug("column name: {}", stringName);
       IColumn col = columns.get(columnName);
-      logger.info("column: {}", col);
+      logger.debug("column: {}", col);
       columnsByStringName.put(stringName, col);
     }
 
@@ -53,7 +60,7 @@ public class StaticRowSource extends BaseThriftSource implements ISource {
           if (serializedVal != null) {
             val = SerializerHelper.deserialize(serializedVal, columnValueType);
           }
-          logger.info("Putting deserialized column: {}. {}", columnName, val);
+          logger.debug("Putting deserialized column: {}. {}", columnName, val);
           result.add(val);
         } catch (Exception e) {
           throw new RuntimeException("Couldn't deserialize column: " + columnName, e);
@@ -65,4 +72,6 @@ public class StaticRowSource extends BaseThriftSource implements ISource {
 
     return result;
   }
+
+
 }

@@ -8,7 +8,7 @@ public class SettingsHelper {
     if (settings.containsKey(key)) {
       return (Map<String, String>) settings.get(key);
     } else {
-      throw new RuntimeException("no config type specs for key: " + key);
+      throw new IllegalArgumentException("no config type specs for key: " + key);
     }
   }
 
@@ -25,14 +25,14 @@ public class SettingsHelper {
     } else if (obj instanceof List) {
       return (List<String>) obj;
     } else {
-      throw new RuntimeException("mappings.source must be a String or List<String>");
+      throw new IllegalArgumentException("mappings.source must be a String or List<String>");
     }
   }
 
   public static Map<String, String> getSinkMappings(Map<String, Object> settings) {
     Map<String, String> sinkMappings = (Map<String, String>) settings.get("mappings.sink");
     if (sinkMappings == null) {
-      throw new RuntimeException("no setting: mappings.sink");
+      throw new IllegalArgumentException("no setting: mappings.sink");
     }
     return sinkMappings;
   }
@@ -42,7 +42,7 @@ public class SettingsHelper {
   public static Map<String, String> getDynamicTypes(Map<String, Object> settings) {
     Map<String, String> dynamicTypes = getTypesByKey(settings, "types.dynamic");
     if (dynamicTypes == null) {
-      throw new RuntimeException("no setting: types.dynamic");
+      throw new IllegalArgumentException("no setting: types.dynamic");
     }
     return dynamicTypes;
   }
@@ -50,7 +50,7 @@ public class SettingsHelper {
   public static Map<String, String> getDynamicMappings(Map<String, Object> settings) {
     Map<String, String> dynamicMappings = (Map<String, String>) settings.get("mappings.dynamic");
     if (dynamicMappings == null) {
-      throw new RuntimeException("no setting: mappings.dynamic");
+      throw new IllegalArgumentException("no setting: mappings.dynamic");
     }
     return dynamicMappings;
   }
@@ -64,18 +64,18 @@ public class SettingsHelper {
       Map<String, String> dynamicMappings = getDynamicMappings(settings);
       String rowKeyField = dynamicMappings.get("rowKey");
       if (rowKeyField == null) {
-        throw new RuntimeException("must set a rowKey mapping in mappings.dynamic");
+        throw new IllegalArgumentException("must set a rowKey mapping in mappings.dynamic");
       }
       return rowKeyField;
     } else {
       String rowKeyColumn = (String) settings.get("mappings.rowKey");
       if (rowKeyColumn == null) {
-        throw new RuntimeException("must set mappings.rowKey");
+        throw new IllegalArgumentException("must set mappings.rowKey");
       }
       Map<String, String> sinkMappings = getSinkMappings(settings);
       String rowKeyField = sinkMappings.get(rowKeyColumn);
       if (rowKeyField == null) {
-        throw new RuntimeException("must set a '" + rowKeyColumn + "' mapping in mappings.sink");
+        throw new IllegalArgumentException("must set a '" + rowKeyColumn + "' mapping in mappings.sink");
       }
       return rowKeyField;
     }

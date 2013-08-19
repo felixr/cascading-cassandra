@@ -22,21 +22,19 @@ public interface ISource {
   /**
    * Creates initial (empty) tuple
    *
+   * @param settings
    * @param sourceCall
    * @return
    */
-  public void sourcePrepare(SourceCall<Object[], RecordReader> sourceCall);
+  public void sourcePrepare(Map<String, Object> settings, SourceCall<Object[], RecordReader> sourceCall);
 
   /**
    * Convert `value` map (key/value pairs) to Cascading tuple.
    *
-   * @param settings - settings object passed while constructing CassandraScheme
    * @param value - key/value pairs of column names and columns (values)
    * @param key - row (partition) key
    * @return
    * @throws IOException
    */
-  public Tuple source(Map<String, Object> settings,
-                      Object key,
-                      Object value) throws IOException;
+  public Tuple source(Object key, Object value) throws IOException;
 }

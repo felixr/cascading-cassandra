@@ -53,7 +53,7 @@ public class CassandraScheme extends BaseCassandraScheme {
   public void sourcePrepare(FlowProcess<JobConf> flowProcess,
                             SourceCall<Object[], RecordReader> sourceCall) {
     sourceImpl = getSourceImpl();
-    sourceImpl.sourcePrepare(sourceCall);
+    sourceImpl.sourcePrepare(this.settings, sourceCall);
   }
 
   /**
@@ -163,7 +163,7 @@ public class CassandraScheme extends BaseCassandraScheme {
       return false;
     }
 
-    Tuple result = sourceImpl.source(this.settings, key, columns);
+    Tuple result = sourceImpl.source(key, columns);
 
     sourceCall.getIncomingEntry().setTuple(result);
     return true;

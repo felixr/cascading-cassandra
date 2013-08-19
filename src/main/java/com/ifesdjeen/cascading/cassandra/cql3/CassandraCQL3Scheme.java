@@ -6,6 +6,7 @@ import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+import com.google.common.base.Joiner;
 import com.ifesdjeen.cascading.cassandra.BaseCassandraScheme;
 import com.ifesdjeen.cascading.cassandra.SettingsHelper;
 import com.ifesdjeen.cascading.cassandra.sinks.CqlSink;
@@ -133,7 +134,7 @@ public class CassandraCQL3Scheme extends BaseCassandraScheme {
 
     if (this.settings.containsKey("mappings.cqlKeys")) {
       List<String> keyMappings = (List<String>) this.settings.get("mappings.cqlKeys");
-      conf.set("row_key",joinString(keyMappings, ","));
+      conf.set("row_key", Joiner.on(',').join(keyMappings));
     } else {
       throw new RuntimeException("Can't sink without 'mappings.cqlKeys'");
     }
@@ -149,19 +150,6 @@ public class CassandraCQL3Scheme extends BaseCassandraScheme {
     sinkImpl.configure(this.settings);
   }
 
-    private String joinString(List<String> keyMappings, String separator) {
-        StringBuffer sb = new StringBuffer();
-        boolean first =true;
-        for (String mapping : keyMappings) {
-            if (!first) {
-                sb.append(",");
-            }else{
-              first = false;
-            }
-            sb.append(mapping);
-        }
-        return sb.toString();
-    }
 
     /**
    *

@@ -16,17 +16,17 @@ import java.util.UUID;
 
 public abstract class BaseCassandraScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
 
-    static final Logger logger = LoggerFactory.getLogger(CassandraScheme.class);
-    public static final String DB_PORT = "db.port";
-    public static final String DB_HOST = "db.host";
-    public static final String DB_KEYSPACE = "db.keyspace";
-    public static final String DB_COLUMN_FAMILY = "db.columnFamily";
-    public static final String SOURCE_RANGE_BATCH_SIZE = "source.rangeBatchSize";
-    public static final String SOURCE_INPUT_SPLIT_SIZE = "source.inputSplitSize";
-    public static final String CASSANDRA_INPUT_PARTITIONER = "cassandra.inputPartitioner";
-    public static final String CASSANDRA_OUTPUT_PARTITIONER = "cassandra.outputPartitioner";
+  static final Logger logger = LoggerFactory.getLogger(CassandraScheme.class);
+  public static final String DB_PORT = "db.port";
+  public static final String DB_HOST = "db.host";
+  public static final String DB_KEYSPACE = "db.keyspace";
+  public static final String DB_COLUMN_FAMILY = "db.columnFamily";
+  public static final String SOURCE_RANGE_BATCH_SIZE = "source.rangeBatchSize";
+  public static final String SOURCE_INPUT_SPLIT_SIZE = "source.inputSplitSize";
+  public static final String CASSANDRA_INPUT_PARTITIONER = "cassandra.inputPartitioner";
+  public static final String CASSANDRA_OUTPUT_PARTITIONER = "cassandra.outputPartitioner";
 
-    protected String pathUUID;
+  protected String pathUUID;
   protected Map<String, Object> settings;
 
   protected String host;
@@ -34,24 +34,24 @@ public abstract class BaseCassandraScheme extends Scheme<JobConf, RecordReader, 
   protected String columnFamily;
   protected String keyspace;
 
-    public BaseCassandraScheme(Map<String, Object> settings) {
-        this.pathUUID = UUID.randomUUID().toString();
+  public BaseCassandraScheme(Map<String, Object> settings) {
+    this.pathUUID = UUID.randomUUID().toString();
 
-        // default settings
-        this.settings = new HashMap<String, Object>();
-        this.settings.put(DB_PORT, "9160");
-        this.settings.put(DB_HOST, "localhost");
-        this.settings.put(SOURCE_INPUT_SPLIT_SIZE, 50);
-        this.settings.put(SOURCE_RANGE_BATCH_SIZE, 1000);
-        this.settings.put(CASSANDRA_INPUT_PARTITIONER, "org.apache.cassandra.dht.Murmur3Partitioner");
-        this.settings.put(CASSANDRA_OUTPUT_PARTITIONER, "org.apache.cassandra.dht.Murmur3Partitioner");
-        this.settings.putAll(settings);
+    // default settings
+    this.settings = new HashMap<String, Object>();
+    this.settings.put(DB_PORT, "9160");
+    this.settings.put(DB_HOST, "localhost");
+    this.settings.put(SOURCE_INPUT_SPLIT_SIZE, 50);
+    this.settings.put(SOURCE_RANGE_BATCH_SIZE, 1000);
+    this.settings.put(CASSANDRA_INPUT_PARTITIONER, "org.apache.cassandra.dht.Murmur3Partitioner");
+    this.settings.put(CASSANDRA_OUTPUT_PARTITIONER, "org.apache.cassandra.dht.Murmur3Partitioner");
+    this.settings.putAll(settings);
 
-        this.port = (String) this.settings.get(DB_PORT);
-        this.host = (String) this.settings.get(DB_HOST);
-        this.keyspace = (String) this.settings.get(DB_KEYSPACE);
-        this.columnFamily = (String) this.settings.get(DB_COLUMN_FAMILY);
-}
+    this.port = (String) this.settings.get(DB_PORT);
+    this.host = (String) this.settings.get(DB_HOST);
+    this.keyspace = (String) this.settings.get(DB_KEYSPACE);
+    this.columnFamily = (String) this.settings.get(DB_COLUMN_FAMILY);
+  }
 
   /**
    *

@@ -13,23 +13,25 @@ import java.util.SortedMap;
 
 public abstract class BaseThriftSource implements ISource {
 
-  public void sourcePrepare(SourceCall<Object[], RecordReader> sourceCall) {
+  protected Map<String, Object> settings;
+
+
+  public void sourcePrepare(Map<String, Object> settings, SourceCall<Object[], RecordReader> sourceCall) {
     ByteBuffer key = ByteBufferUtil.clone((ByteBuffer) sourceCall.getInput().createKey());
     SortedMap<ByteBuffer, IColumn> value = (SortedMap<ByteBuffer, IColumn>) sourceCall.getInput().createValue();
 
     Object[] obj = new Object[]{key, value};
     sourceCall.setContext(obj);
+    this.settings = settings;
   }
 
-    public Tuple source(Map<String, Object> settings,
-                        Object boxedKey,
+    public Tuple source(Object boxedKey,
                         Object boxedColumns) throws IOException {
         SortedMap<ByteBuffer, IColumn> columns = (SortedMap<ByteBuffer, IColumn>) boxedColumns;
         ByteBuffer key = (ByteBuffer) boxedKey;
-        return source(settings, key, columns);
+        return source(key, columns);
     }
 
-    abstract protected Tuple source(Map<String, Object> settings,
-                               ByteBuffer key,
-                               SortedMap<ByteBuffer, IColumn> columns) throws IOException;
+    abstract protected Tuple source(ByteBuffer key,
+                                    SortedMap<ByteBuffer, IColumn> columns) throws IOException;
 }

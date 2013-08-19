@@ -4,7 +4,9 @@ import java.util.*;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 
+import cascading.scheme.SourceCall;
 import com.ifesdjeen.cascading.cassandra.SettingsHelper;
+import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,14 +23,18 @@ import com.ifesdjeen.cascading.cassandra.hadoop.SerializerHelper;
 public class DynamicRowSource extends BaseThriftSource implements ISource {
 
   protected static final Logger logger = LoggerFactory.getLogger(DynamicRowSource.class);
+  protected Map<String, String> dataTypes;
 
-  public Tuple source(Map<String, Object> settings,
-                      ByteBuffer key,
+  @Override
+  public void sourcePrepare(Map<String, Object> settings, SourceCall<Object[], RecordReader> sourceCall) {
+    super.sourcePrepare(settings,sourceCall);
+    dataTypes = Collections.unmodifiableMap(SettingsHelper.getDynamicTypes(settings));
+  }
+
+  public Tuple source(ByteBuffer key,
                       SortedMap<ByteBuffer, IColumn> columns) throws IOException {
     Tuple result = new Tuple();
     result.add(ByteBufferUtil.string(key));
-
-    Map<String, String> dataTypes = SettingsHelper.getDynamicTypes(settings);
 
     if (columns.values().isEmpty()) {
       logger.info("Values are empty.");
@@ -64,4 +70,6 @@ public class DynamicRowSource extends BaseThriftSource implements ISource {
 
     return result;
   }
+
+
 }
