@@ -1,5 +1,6 @@
 package com.ifesdjeen.cascading.cassandra;
 
+import com.google.common.base.Joiner;
 import com.ifesdjeen.cascading.cassandra.sinks.DynamicRowSink;
 import com.ifesdjeen.cascading.cassandra.sinks.ISink;
 import com.ifesdjeen.cascading.cassandra.sinks.StaticRowSink;
@@ -31,6 +32,9 @@ import java.nio.ByteBuffer;
 
 public class CassandraScheme extends BaseCassandraScheme {
 
+  ISource sourceImpl;
+  ISink sinkImpl;
+
   public CassandraScheme(Map<String, Object> settings) {
     super(settings);
   }
@@ -48,7 +52,7 @@ public class CassandraScheme extends BaseCassandraScheme {
   @Override
   public void sourcePrepare(FlowProcess<JobConf> flowProcess,
                             SourceCall<Object[], RecordReader> sourceCall) {
-    ISource sourceImpl = getSourceImpl();
+    sourceImpl = getSourceImpl();
     sourceImpl.sourcePrepare(sourceCall);
   }
 
@@ -62,41 +66,8 @@ public class CassandraScheme extends BaseCassandraScheme {
   public void sourceConfInit(FlowProcess<JobConf> process,
                              Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
     super.sourceConfInit(process, tap, conf);
-
     conf.setInputFormat(ColumnFamilyInputFormat.class);
-
-    if (this.settings.containsKey("source.predicate")) {
-      ConfigHelper.setInputSlicePredicate(conf, (SlicePredicate) this.settings.get("source.predicate"));
-    } else {
-      SlicePredicate predicate = new SlicePredicate();
-
-      List<String> sourceColumns = this.getSourceColumns();
-
-      if (!sourceColumns.isEmpty()) {
-         if (logger.isDebugEnabled()) {
-             String allSourceColumns = "";
-             for (String column: sourceColumns) {
-                 allSourceColumns += column + ", ";
-             }
-             logger.debug("Using with following columns: {}", allSourceColumns);
-          }
-
-        List<ByteBuffer> columnNames = new ArrayList<ByteBuffer>();
-        for (String columnFieldName : sourceColumns) {
-          columnNames.add(ByteBufferUtil.bytes(columnFieldName));
-        }
-
-        predicate.setColumn_names(columnNames);
-      } else {
-        logger.debug("Using slicerange over all columns");
-
-        SliceRange sliceRange = new SliceRange();
-        sliceRange.setStart(ByteBufferUtil.bytes(""));
-        sliceRange.setFinish(ByteBufferUtil.bytes(""));
-        predicate.setSlice_range(sliceRange);
-      }
-      ConfigHelper.setInputSlicePredicate(conf, predicate);
-    }
+    setInputSlicePredicate(conf);
 
     if (this.settings.containsKey("source.useWideRows")) {
       ConfigHelper.setInputColumnFamily(conf, this.keyspace, this.columnFamily,
@@ -105,7 +76,70 @@ public class CassandraScheme extends BaseCassandraScheme {
       ConfigHelper.setInputColumnFamily(conf, this.keyspace, this.columnFamily);
     }
 
+  }
 
+  /**
+   * Sets the Input SlicePredicate via {@link ConfigHelper} using the settings map.
+   * @param conf
+   */
+  private void setInputSlicePredicate(JobConf conf) {
+    SlicePredicate predicate;
+    final List<String> sourceColumns = this.getSourceColumns();
+    if (this.settings.containsKey("source.predicate")) {
+      final Object obj = this.settings.get("source.predicate");
+      if (obj instanceof SlicePredicate) {
+        predicate = (SlicePredicate) obj;
+      } else {
+        logger.warn("Object in 'source.predicate' not an instance of SlicePredicate; using empty predicate instead.");
+        predicate = createEmptyPredicate();
+      }
+      if (!sourceColumns.isEmpty()) {
+        logger.warn("Ignoring 'source.columns' because 'source.predicate' is set");
+      }
+    } else {
+
+      if (!sourceColumns.isEmpty()) {
+        logger.debug("Using with following columns: {}",
+                Joiner.on(", ").join(sourceColumns));
+        predicate = createColumnFilterPredicate(sourceColumns);
+      } else {
+        logger.debug("Using slicerange over all columns");
+        predicate = createEmptyPredicate();
+      }
+    }
+    ConfigHelper.setInputSlicePredicate(conf, predicate);
+  }
+
+  /**
+   * Creates a {@link SlicePredicate} using a list of column names.
+   *
+   * @param sourceColumns
+   * @return
+   */
+  private SlicePredicate createColumnFilterPredicate(List<String> sourceColumns) {
+    SlicePredicate predicate;
+    List<ByteBuffer> columnNames = new ArrayList<ByteBuffer>();
+    for (String columnFieldName : sourceColumns) {
+      columnNames.add(ByteBufferUtil.bytes(columnFieldName));
+    }
+
+    predicate = new SlicePredicate();
+    predicate.setColumn_names(columnNames);
+    return predicate;
+  }
+
+  /**
+   * Creates an empty {@link SlicePredicate}.
+   *
+   * @return SlicePredicate with no filter predicates
+   */
+  SlicePredicate createEmptyPredicate() {
+    final SlicePredicate predicate = new SlicePredicate();
+    SliceRange sliceRange = new SliceRange();
+    sliceRange.setStart(ByteBufferUtil.EMPTY_BYTE_BUFFER);
+    sliceRange.setFinish(ByteBufferUtil.EMPTY_BYTE_BUFFER);
+    predicate.setSlice_range(sliceRange);
+    return predicate;
   }
 
   /**
@@ -125,12 +159,10 @@ public class CassandraScheme extends BaseCassandraScheme {
     Object columns = sourceCall.getContext()[1];
 
     boolean hasNext = input.next(key, columns);
-
     if (!hasNext) {
       return false;
     }
 
-    ISource sourceImpl = getSourceImpl();
     Tuple result = sourceImpl.source(this.settings, key, columns);
 
     sourceCall.getIncomingEntry().setTuple(result);
@@ -150,6 +182,12 @@ public class CassandraScheme extends BaseCassandraScheme {
    * Sink Methods
    *
    */
+
+  @Override
+  public void sinkPrepare(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
+    super.sinkPrepare(flowProcess, sinkCall);
+    sinkImpl = getSinkImpl();
+  }
 
   /**
    *
@@ -176,7 +214,7 @@ public class CassandraScheme extends BaseCassandraScheme {
     TupleEntry tupleEntry = sinkCall.getOutgoingEntry();
     OutputCollector outputCollector = sinkCall.getOutput();
 
-    ISink sinkImpl = getSinkImpl();
+
     sinkImpl.sink(settings, tupleEntry, outputCollector);
   }
 
@@ -192,8 +230,12 @@ public class CassandraScheme extends BaseCassandraScheme {
           return new StaticRowSink();
         }
       } else {
-        Class<ISink> klass = (Class<ISink>) Class.forName(className);
-        return klass.newInstance();
+        final Class<?> aClass = Class.forName(className);
+        if (ISink.class.isAssignableFrom(aClass)) {
+          return (ISink) aClass.newInstance();
+        } else {
+          throw new IllegalArgumentException(aClass.getCanonicalName() + " does not implement ISink");
+        }
       }
     } catch (InstantiationException e) {
       throw new RuntimeException(e);
@@ -216,8 +258,12 @@ public class CassandraScheme extends BaseCassandraScheme {
           return new StaticRowSource();
         }
       } else {
-        Class<ISource> klass = (Class<ISource>) Class.forName(className);
-        return klass.newInstance();
+        final Class<?> aClass = Class.forName(className);
+        if (ISink.class.isAssignableFrom(aClass)) {
+          return (ISource) aClass.newInstance();
+        } else {
+          throw new IllegalArgumentException(aClass.getCanonicalName() + " does not implement ISource");
+        }
       }
     } catch (InstantiationException e) {
       throw new RuntimeException(e);
